@@ -1,9 +1,11 @@
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
-using Core.Rdis;
+using System.Linq;
+using Core.Redis;
 using Thor;
 using Thor.Views;
 
-namespace Core;
 
 public class TestServer
 {
@@ -45,9 +47,9 @@ public class TestServer
 
     public void Tick()
     {
+        _timer.Restart();
         _subscriber.Tick();
         _receiver.Tick();
-        
         _view.Tick();
 
         double dt = (long)_timer.ElapsedMilliseconds / 1000.0;
@@ -55,13 +57,11 @@ public class TestServer
         // do flocking
         foreach (var entity in _view.WriteView.Entities.Where(e => e.Value.IsValid))
         {
-            Console.WriteLine($"TICKING {entity.Key}");
-            
             var fields = entity.Value.Data.Fields;
-            double x = BitConverter.ToDouble(fields["x"]);
-            double y = BitConverter.ToDouble(fields["y"]);
-            double vx = BitConverter.ToDouble(fields["vx"]);
-            double vy = BitConverter.ToDouble(fields["vy"]);
+            double x = BitConverter.ToDouble(fields["x"], 0);
+            double y = BitConverter.ToDouble(fields["y"], 0);
+            double vx = BitConverter.ToDouble(fields["vx"], 0);
+            double vy = BitConverter.ToDouble(fields["vy"], 0);
 
             double newX = x + vx * dt;
             double newY = y + vy * dt;
@@ -72,7 +72,7 @@ public class TestServer
                 {"y", BitConverter.GetBytes(newY)}
             }, new byte[][]{});
             
-            Console.WriteLine($"moved {entity} to x:{newX} y:{newY} {_view.WriteView.Entities[entity.Key].Data.WriteIndex}");
+            // Console.WriteLine($"moved {entity} to x:{newX} y:{newY} {_view.WriteView.Entities[entity.Key].Data.WriteIndex}");
         }
         
 
@@ -107,6 +107,8 @@ public class TestServer
             }
         }
         
-        _timer.Restart();
+        _writer.Flush();
+        _subscriber.Flush();
+        Console.WriteLine(_timer.ElapsedMilliseconds + "ms tick time");
     }
 }

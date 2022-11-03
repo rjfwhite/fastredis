@@ -1,10 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "Core\Core.csproj", "{C410421F-FE55-4685-AA31-E52444A014C3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Thor", "Thor\Thor.csproj", "{C410421F-FE55-4685-AA31-E52444A014C3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{F1CEB992-5DA8-4405-911B-DDAA7881F14F}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Benchmarks", "Benchmarks\Benchmarks.csproj", "{72FEFE45-5D8B-4495-AB86-26C80D81F983}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleApp", "ExampleApp\ExampleApp.csproj", "{4267C128-FD8C-4D69-9598-B89C36228B47}"
 EndProject
@@ -22,10 +20,6 @@ Global
 		{F1CEB992-5DA8-4405-911B-DDAA7881F14F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F1CEB992-5DA8-4405-911B-DDAA7881F14F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F1CEB992-5DA8-4405-911B-DDAA7881F14F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{72FEFE45-5D8B-4495-AB86-26C80D81F983}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{72FEFE45-5D8B-4495-AB86-26C80D81F983}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{72FEFE45-5D8B-4495-AB86-26C80D81F983}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{72FEFE45-5D8B-4495-AB86-26C80D81F983}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4267C128-FD8C-4D69-9598-B89C36228B47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4267C128-FD8C-4D69-9598-B89C36228B47}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4267C128-FD8C-4D69-9598-B89C36228B47}.Release|Any CPU.ActiveCfg = Release|Any CPU

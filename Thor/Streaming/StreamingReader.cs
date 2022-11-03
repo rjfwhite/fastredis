@@ -1,6 +1,9 @@
-using System.Collections.Concurrent;
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Text;
-using Core.Rdis;
+using Core.Redis;
+using Core.Streaming;
 
 public interface IStreamingReaderFactory
 {
@@ -9,11 +12,11 @@ public interface IStreamingReaderFactory
 
 public class StreamingReaderFactory : IStreamingReaderFactory
 {
-    private RedisClient _client;
+    private NetworkedRedisClient _client;
     private readonly RedisSubscriber _subscriber;
     private readonly RedisReceiver _receiver;
 
-    public StreamingReaderFactory(RedisSubscriber subscriber, RedisReceiver receiver, RedisClient client)
+    public StreamingReaderFactory(RedisSubscriber subscriber, RedisReceiver receiver, NetworkedRedisClient client)
     {
         _client = client;
         _subscriber = subscriber;
@@ -51,7 +54,7 @@ public interface IStreamingReader
 
 public class RedisStreamingReader : IStreamingReader
 {
-    private readonly RedisClient _client;
+    private readonly NetworkedRedisClient _client;
     private readonly RedisReceiver _receiver;
     private readonly RedisSubscriber _subscriber;
 
@@ -61,11 +64,10 @@ public class RedisStreamingReader : IStreamingReader
     private List<StreamingEntryUpdate> _updateQueue = new();
     private StreamingEntryUpdate? _initialUpdate;
     private bool _initialized = false;
-    private IDisposable _handler;
     private Dictionary<string, byte[]> _data = new();
     private long _getInitialStateHandle = -1;
 
-    public RedisStreamingReader(RedisClient client, RedisReceiver receiver, RedisSubscriber subscriber, string key)
+    public RedisStreamingReader(NetworkedRedisClient client, RedisReceiver receiver, RedisSubscriber subscriber, string key)
     {
         _client = client;
         _receiver = receiver;
@@ -77,15 +79,12 @@ public class RedisStreamingReader : IStreamingReader
 
     public void Open()
     {
-        Console.WriteLine($"{_key} opening");
+        // Console.WriteLine($"{_key} opening");
         _subscriber.Subscribe(_key);
-        Console.WriteLine($"{_key} is now pending? {_subscriber.PendingSubscriptions.Contains(_key)}");
     }
 
     public void Close()
     {
-        // UnityEngine.Debug.Log($"Disposing reader of {_key}");
-        _handler.Dispose();
         _subscriber.Unsubscribe(_key);
         IsClosed = true;
     }
@@ -128,15 +127,19 @@ public class RedisStreamingReader : IStreamingReader
             if (_receiver.Results.ContainsKey(_getInitialStateHandle))
             {
                 var redisResult = _receiver.Results[_getInitialStateHandle].arrayValue;
-
+                
+                // Console.WriteLine($"{_key} got initial states {redisResult.Length}");
+                
                 // Read initial state
                 for (var i = 0; i < redisResult.Length; i += 2)
                 {
+         
+                    
                     var field = Encoding.Default.GetString(redisResult[i].stringValue);
                     var value = redisResult[i + 1].stringValue;
                     if (field == "_epoch")
                     {
-                        _initialEpoch = BitConverter.ToInt64(value);
+                        _initialEpoch = BitConverter.ToInt64(value, 0);
                     }
                     else
                     {
@@ -166,7 +169,7 @@ public class RedisStreamingReader : IStreamingReader
                     }
                 }
 
-                Console.WriteLine($"{_key} got initial state {string.Join("|", _data.Keys)}");
+                // Console.WriteLine($"{_key} got initial state {string.Join("|", _data.Keys)}");
                 IsValid = true;
                 result = new StreamingEntryUpdateExternal
                     { FieldUpdates = _data, Events = new byte[][] { }, Count = 1 };

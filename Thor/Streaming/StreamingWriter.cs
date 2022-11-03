@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
-using Core.Rdis;
+using Core.Redis;
+using Core.Streaming;
+using Thor.Optimization;
 
 // using StackExchange.Redis;
 public struct StreamingEntryUpdate
@@ -16,54 +17,68 @@ public struct StreamingEntryUpdate
 public interface IStatelessStreamingWriter
 {
     void Send(string key, IReadOnlyDictionary<string, byte[]> fields, byte[][] events);
+
+    void Flush();
 }
 
 
 public class RedisStatelessStreamingWriter : IStatelessStreamingWriter
 {
-    private RedisClient _client;
+    private NetworkedRedisClient _client;
 
-    public RedisStatelessStreamingWriter(RedisClient client)
+    public RedisStatelessStreamingWriter(NetworkedRedisClient client)
     {
         _client = client;
     }
 
+    
+    static MemoryStream stream = new MemoryStream();
+    static BinaryWriter writer = new BinaryWriter(stream);
+    
     public void Send(string key, IReadOnlyDictionary<string, byte[]> fields, byte[][] events)
     {
-        long nextEpoch = new Random().NextInt64();
-        MemoryStream stream = new MemoryStream();
-        BinaryWriter writer = new BinaryWriter(stream);
+        long nextEpoch = new Random().Next();
+        stream.SetLength(0);
         Serializers.WriteUpdate(writer, new StreamingEntryUpdate{Epoch = nextEpoch, FieldUpdates = fields, Events = events});
 
         var updateArgs = new List<byte[]>();
         var removalArgs = new List<byte[]>();
+        var keyBytes = Memoizer.ToBytes(key);
 
-        updateArgs.Append(Encoding.Default.GetBytes("HSET"));
-        removalArgs.Append(Encoding.Default.GetBytes("HDEL"));
+        updateArgs.Add(Memoizer.ToBytes("HSET"));
+        updateArgs.Add(keyBytes);
+        removalArgs.Add(Memoizer.ToBytes("HDEL"));
+        removalArgs.Add(keyBytes);
         
         foreach (var field in fields)
         {
+            var fieldKey = Memoizer.ToBytes(field.Key);
             if (field.Value.Length > 0)
             {
-                updateArgs.Add(Encoding.Default.GetBytes(field.Key));
+                updateArgs.Add(fieldKey);
                 updateArgs.Add(field.Value);
             }
             else
             {
-                removalArgs.Add(Encoding.Default.GetBytes(field.Key));
+                removalArgs.Add(fieldKey);
             }
         }
         
-        updateArgs.Add(Encoding.Default.GetBytes("_epoch"));
+        updateArgs.Add(Memoizer.ToBytes("_epoch"));
         updateArgs.Add(BitConverter.GetBytes(nextEpoch));
         
-        _client.SendCommand(new[] {  Encoding.Default.GetBytes("MULTI") });
+        _client.SendCommand(new[] {  Memoizer.ToBytes("MULTI") });
         _client.SendCommand(updateArgs.ToArray());
-        if (removalArgs.Count > 1)
+        if (removalArgs.Count > 2)
         {
             _client.SendCommand(removalArgs.ToArray());
         };
-        _client.SendCommand(new[] {  Encoding.Default.GetBytes("PUBLISH"), Encoding.Default.GetBytes(key), stream.ToArray() });
-        _client.SendCommand(new[] {  Encoding.Default.GetBytes("EXEC") });
+        _client.SendCommand(new[] {  Memoizer.ToBytes("PUBLISH"), keyBytes, stream.ToArray() });
+        _client.SendCommand(new[] {  Memoizer.ToBytes("EXEC") });
+    }
+
+    public void Flush()
+    {
+        _client.Flush();
     }
 }

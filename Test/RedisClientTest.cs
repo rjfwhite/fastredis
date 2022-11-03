@@ -1,9 +1,10 @@
 
+using System.Linq;
 using System.Text;
-using Core.Rdis;
+using System.Threading;
+using Core.Redis;
 using NUnit.Framework;
 
-namespace Test;
 
 public class RedisClientTest
 {
@@ -15,7 +16,7 @@ public class RedisClientTest
     [Test]
     public void TestConnection()
     {
-        var client = new RedisClient();
+        var client = new NetworkedRedisClient();
         var connected = client.Open("localhost", 6379);
         Assert.AreEqual(connected, true);
         client.Close();
@@ -24,10 +25,10 @@ public class RedisClientTest
     [Test]
     public void TestSubscriptionHandler()
     {
-        var pubClient = new RedisClient();
+        var pubClient = new NetworkedRedisClient();
         pubClient.Open("localhost", 6379);
         
-        var subClient = new RedisClient();
+        var subClient = new NetworkedRedisClient();
         subClient.Open("localhost", 6379);
         var subscriber = new RedisSubscriber(subClient);
         
@@ -55,7 +56,7 @@ public class RedisClientTest
     [Test]
     public void TestTransaction()
     {
-        var client = new RedisClient();
+        var client = new NetworkedRedisClient();
         client.Open("localhost", 6379);
 
         var multi = client.SendCommand(Command("MULTI"));
