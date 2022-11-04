@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using Core.Redis;
+using FastRedis;
 
 namespace ExampleApp
 {
@@ -33,12 +34,12 @@ namespace ExampleApp
                 {
                     client.EqueueCommand(command);
                 }
-               
-                
+
+
                 client.EndTick();
                 // Console.WriteLine($"received {received.Count} messages");
             }
-            
+
             Console.WriteLine($"received total of {totalMessages} in {sw.ElapsedMilliseconds}ms");
         }
     }

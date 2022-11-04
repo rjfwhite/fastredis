@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Net.Sockets;
-using System.Text;
-using Thor.Optimization;
 
-namespace Core.Redis
+namespace FastRedis
 {
     public class FastRedisClient
     {
@@ -13,7 +10,6 @@ namespace Core.Redis
         
         private static ByteBuffer currentBuffer = new();
         private static ByteBuffer nextFrameBuffer = new();
-
         private static ByteBuffer writeBuffer = new();
 
         private Queue<FastRedisValue> _redisValuePool = new();

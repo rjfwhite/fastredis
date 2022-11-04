@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using Thor.Optimization;
 
-namespace Core.Redis
+namespace FastRedis
 {
     public struct FastRedisValue
     {
