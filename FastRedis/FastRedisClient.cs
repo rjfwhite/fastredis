@@ -25,8 +25,6 @@ namespace FastRedis
             return _client.Connected;
         }
         
-        // private Dictionary<long, RedisValue>
-
         public void BeginTick(List<FastRedisValue> outResults)
         {
             if (!_client.GetStream().DataAvailable)

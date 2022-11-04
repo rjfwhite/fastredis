@@ -5,23 +5,23 @@ namespace FastRedis
 {
     public struct FastRedisValue
     {
-        public Memory<byte> stringValue;
-        public Memory<byte> errorValue;
-        public bool nullValue;
-        public int? intValue;
-        public List<FastRedisValue> arrayValue;
+        public Memory<byte> StringValue;
+        public Memory<byte> ErrorValue;
+        public bool NullValue;
+        public int? IntValue;
+        public List<FastRedisValue> ArrayValue;
 
         public void Reset()
         {
-            stringValue = null;
-            errorValue = null;
-            nullValue = false;
-            intValue = null;
-            if (arrayValue == null)
+            StringValue = null;
+            ErrorValue = null;
+            NullValue = false;
+            IntValue = null;
+            if (ArrayValue == null)
             {
-                arrayValue = new List<FastRedisValue>(100);
+                ArrayValue = new List<FastRedisValue>(100);
             }
-            arrayValue.Clear();
+            ArrayValue.Clear();
         }
 
         public static int TryReadValue(Memory<byte> reader, ref FastRedisValue result)
@@ -36,7 +36,7 @@ namespace FastRedis
                     var bytesRead = TryReadSimpleString(reader, out var simpleString);
                     if (bytesRead > 0)
                     {
-                        result.stringValue = simpleString;
+                        result.StringValue = simpleString;
                         return bytesRead;
                     }
 
@@ -49,7 +49,7 @@ namespace FastRedis
                     var bytesRead = TryReadSimpleString(reader, out var simpleString);
                     if (bytesRead > 0)
                     {
-                        result.errorValue = simpleString;
+                        result.ErrorValue = simpleString;
                         return bytesRead;
                     }
 
@@ -64,11 +64,11 @@ namespace FastRedis
                     {
                         if (bulkString != null)
                         {
-                            result.stringValue = bulkString.Value;
+                            result.StringValue = bulkString.Value;
                         }
                         else
                         {
-                            result.nullValue = true;
+                            result.NullValue = true;
                         }
 
                         return bytesRead;
@@ -83,7 +83,7 @@ namespace FastRedis
                     var bytesRead = TryReadIntegerValue(reader.Slice(1), out var integer) + 1;
                     if (bytesRead > 0)
                     {
-                        result.intValue = integer;
+                        result.IntValue = integer;
                         return bytesRead;
                     }
 
@@ -93,7 +93,7 @@ namespace FastRedis
                 // array
                 if (identifier == '*')
                 {
-                    var bytesRead = TryReadArray(reader, result.arrayValue);
+                    var bytesRead = TryReadArray(reader, result.ArrayValue);
                     if (bytesRead > 0)
                     {
                         return bytesRead;

@@ -66,10 +66,10 @@ namespace FastRedis.Test
                 var bytesRead = FastRedisValue.TryReadArray(new Memory<byte>(input), results);
                 Assert.That(bytesRead, Is.EqualTo(input.Length));
                 Assert.That(results.Count, Is.EqualTo(4));
-                Assert.That(Encoding.Default.GetString(results[0].stringValue.ToArray()), Is.EqualTo("hello"));
-                Assert.That(Encoding.Default.GetString(results[1].stringValue.ToArray()), Is.EqualTo("world"));
-                Assert.That(Encoding.Default.GetString(results[2].stringValue.ToArray()), Is.EqualTo("t"));
-                Assert.That(Encoding.Default.GetString(results[3].stringValue.ToArray()), Is.EqualTo("values"));
+                Assert.That(Encoding.Default.GetString(results[0].StringValue.ToArray()), Is.EqualTo("hello"));
+                Assert.That(Encoding.Default.GetString(results[1].StringValue.ToArray()), Is.EqualTo("world"));
+                Assert.That(Encoding.Default.GetString(results[2].StringValue.ToArray()), Is.EqualTo("t"));
+                Assert.That(Encoding.Default.GetString(results[3].StringValue.ToArray()), Is.EqualTo("values"));
             }
 
             [Test] public void ReadValue()
@@ -78,7 +78,7 @@ namespace FastRedis.Test
                 var result = new FastRedisValue();
                 var bytesRead = FastRedisValue.TryReadValue(new Memory<byte>(input), ref result);
                 Assert.That(bytesRead, Is.EqualTo("+hello\r\n".Length));
-                Assert.That(Encoding.Default.GetString(result.stringValue.ToArray()), Is.EqualTo("hello"));
+                Assert.That(Encoding.Default.GetString(result.StringValue.ToArray()), Is.EqualTo("hello"));
             }
             
             [Test] public void ReadValueWithInt()
@@ -87,7 +87,7 @@ namespace FastRedis.Test
                 var result = new FastRedisValue();
                 var bytesRead = FastRedisValue.TryReadValue(new Memory<byte>(input), ref result);
                 Assert.That(bytesRead, Is.EqualTo(":32\r\n".Length));
-                Assert.That(result.intValue, Is.EqualTo(32));
+                Assert.That(result.IntValue, Is.EqualTo(32));
             }
             
             [Test] public void ReadValueWithArray()
@@ -97,10 +97,10 @@ namespace FastRedis.Test
                 result.Reset();
                 var bytesRead = FastRedisValue.TryReadValue(new Memory<byte>(input), ref result);
                 Assert.That(bytesRead, Is.EqualTo(input.Length));
-                Assert.That(Encoding.Default.GetString(result.arrayValue[0].stringValue.ToArray()), Is.EqualTo("hello"));
-                Assert.That(Encoding.Default.GetString(result.arrayValue[1].stringValue.ToArray()), Is.EqualTo("world"));
-                Assert.That(Encoding.Default.GetString(result.arrayValue[2].stringValue.ToArray()), Is.EqualTo("hello"));
-                Assert.That(Encoding.Default.GetString(result.arrayValue[3].stringValue.ToArray()), Is.EqualTo("values"));
+                Assert.That(Encoding.Default.GetString(result.ArrayValue[0].StringValue.ToArray()), Is.EqualTo("hello"));
+                Assert.That(Encoding.Default.GetString(result.ArrayValue[1].StringValue.ToArray()), Is.EqualTo("world"));
+                Assert.That(Encoding.Default.GetString(result.ArrayValue[2].StringValue.ToArray()), Is.EqualTo("hello"));
+                Assert.That(Encoding.Default.GetString(result.ArrayValue[3].StringValue.ToArray()), Is.EqualTo("values"));
             }
 
             [Test] public void ReadBulkString()
@@ -147,8 +147,8 @@ namespace FastRedis.Test
                 var bytesRead = FastRedisValue.TryReadValueList(new Memory<byte>(input), resultList, queue);
                 Assert.That(bytesRead, Is.EqualTo(input.Length));
                 Assert.That(resultList.Count, Is.EqualTo(2));
-                Assert.That(resultList[0].nullValue, Is.True);
-                Assert.That(Encoding.Default.GetString(resultList[1].stringValue.ToArray()), Is.EqualTo("hello"));
+                Assert.That(resultList[0].NullValue, Is.True);
+                Assert.That(Encoding.Default.GetString(resultList[1].StringValue.ToArray()), Is.EqualTo("hello"));
             }
 
             [Test] public void ReadTruncatedValueList()
@@ -164,7 +164,7 @@ namespace FastRedis.Test
                 var bytesRead = FastRedisValue.TryReadValueList(new Memory<byte>(input), resultList, queue);
                 Assert.That(bytesRead, Is.EqualTo("$-1\r\n\r\n".Length));
                 Assert.That(resultList.Count, Is.EqualTo(1));
-                Assert.That(resultList[0].nullValue, Is.True);
+                Assert.That(resultList[0].NullValue, Is.True);
             }
             
             [Test] public void WriteInt()

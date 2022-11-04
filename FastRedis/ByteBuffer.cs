@@ -19,12 +19,7 @@ namespace FastRedis
             Buffer.BlockCopy(value, offset, Data, Head, length);
             Head += length;
         }
-
-        public void AddIntString(int value)
-        {
-            Add(Memoizer.ToStringBytes(value));
-        }
-
+        
         public void Add(byte value)
         {
             Data[Head++] = value;
