@@ -133,8 +133,6 @@ public class RedisStreamingReader : IStreamingReader
                 // Read initial state
                 for (var i = 0; i < redisResult.Length; i += 2)
                 {
-         
-                    
                     var field = Encoding.Default.GetString(redisResult[i].stringValue);
                     var value = redisResult[i + 1].stringValue;
                     if (field == "_epoch")

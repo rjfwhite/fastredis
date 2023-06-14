@@ -8,14 +8,23 @@ namespace FastRedis
     {
         private TcpClient _client;
         
-        private static ByteBuffer currentBuffer = new();
-        private static ByteBuffer nextFrameBuffer = new();
-        private static ByteBuffer writeBuffer = new();
+        private ByteBuffer currentBuffer = new();
+        private ByteBuffer nextFrameBuffer = new();
+        private ByteBuffer writeBuffer = new();
 
         private Queue<FastRedisValue> _redisValuePool = new();
-        
+
+        private Dictionary<long, FastRedisValue> _results = new();
+
+        private long nextSendId = 0L;
+        private long nextReceiveId = 0L;
+
+        public IReadOnlyDictionary<long, FastRedisValue> Results => _results;
+
         public bool Open(string host, int port) {
             _client = new TcpClient(host, port);
+            
+            // create a pool of redis values
             for (int i = 0; i < 50000; i++)
             {
                 var redisValue = new FastRedisValue();
@@ -42,17 +51,19 @@ namespace FastRedis
             nextFrameBuffer.Add(currentBuffer.Data, totalBytesRead, currentBuffer.Head - totalBytesRead);
             
             currentBuffer.Reset();
-            
-            
-            // Console.WriteLine($"ROLLING OVER {currentBuffer.Head - totalBytesRead} bytes to next frame, head is now {currentBuffer.Head}");
-            
-            // Console.WriteLine($"READ {totalBytesRead} bytes from socket {Encoding.Default.GetString(currentBuffer.Data, 0, currentBuffer.Head)}");
+
+            // add enumerated results
+            for (var i = 0; i < outResults.Count; i++)
+            {
+                _results.Add(nextReceiveId++, outResults[i]);
+            }
         }
 
-        public void EqueueCommand(List<Memory<byte>> command)
+        public long EqueueCommand(List<Memory<byte>> command)
         {
             var bytesWritten = FastRedisValue.WriteBulkStringArray(new Memory<byte>(writeBuffer.Data, writeBuffer.Head, writeBuffer.Data.Length - writeBuffer.Head), command);
             writeBuffer.Head += bytesWritten;
+            return nextSendId++;
         }
 
         public void EndTick()
@@ -63,6 +74,9 @@ namespace FastRedis
             
             // clear write buffer
             writeBuffer.Reset();
+            
+            // clear results this tick
+            _results.Clear();
 
             // swap the buffers around
             (currentBuffer, nextFrameBuffer) = (nextFrameBuffer, currentBuffer);

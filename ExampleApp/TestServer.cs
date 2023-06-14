@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using Core.Redis;
 using Thor;
 using Thor.Views;
@@ -43,6 +44,8 @@ public class TestServer
             factory);
     }
 
+    
+    
 
 
     public void Tick()

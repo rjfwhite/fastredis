@@ -20,6 +20,13 @@ namespace FastRedis
             Head += length;
         }
         
+        public void Add(Memory<byte> buffer)
+        {
+            //TODO: assert this doesn't overflow
+            buffer.CopyTo(new Memory<byte>(Data, Head, buffer.Length));
+            Head += buffer.Length;
+        }
+        
         public void Add(byte value)
         {
             Data[Head++] = value;

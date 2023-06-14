@@ -19,6 +19,7 @@ namespace FastRedis
             IntValue = null;
             if (ArrayValue == null)
             {
+                // TODO: this is a hack to avoid allocations for lists of size 0-100
                 ArrayValue = new List<FastRedisValue>(100);
             }
             ArrayValue.Clear();
