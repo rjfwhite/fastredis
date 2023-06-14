@@ -1,7 +1,5 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleApp", "ExampleApp\ExampleApp.csproj", "{4267C128-FD8C-4D69-9598-B89C36228B47}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastRedis", "FastRedis\FastRedis.csproj", "{3BC3CBAA-89ED-4D91-9255-94A30FB472E8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastRedis.Test", "FastRedis.Test\FastRedis.Test.csproj", "{7192306C-638E-49CB-AD94-4AEC679EA4BD}"
@@ -12,10 +10,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{4267C128-FD8C-4D69-9598-B89C36228B47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4267C128-FD8C-4D69-9598-B89C36228B47}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4267C128-FD8C-4D69-9598-B89C36228B47}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4267C128-FD8C-4D69-9598-B89C36228B47}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3BC3CBAA-89ED-4D91-9255-94A30FB472E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3BC3CBAA-89ED-4D91-9255-94A30FB472E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3BC3CBAA-89ED-4D91-9255-94A30FB472E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
