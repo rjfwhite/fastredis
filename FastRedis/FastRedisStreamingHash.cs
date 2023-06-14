@@ -49,10 +49,10 @@ public class FastRedisStreamingHash
         _events.Clear();
         _updateCount = 0;
 
-        if (!_hasSubscription && _client.Results.ContainsKey(_subscriptionId))
-        {
-            
-        }
+        // if (!_hasSubscription && _client.Results.ContainsKey(_subscriptionId))
+        // {
+        //     
+        // }
         
         // Set initial data if we have it
         if (!_hasInitialData && _client.Results.ContainsKey(_initialDataId))
