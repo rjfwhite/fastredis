@@ -5,6 +5,7 @@ namespace FastRedis
 {
     public class ByteBuffer
     {
+        // TODO: do something smarter than a big fixed chunk of memory here
         public byte[] Data = new byte[500000];
         public int Head = 0;
 
