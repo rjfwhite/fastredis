@@ -17,11 +17,13 @@ namespace FastRedis
         private List<FastRedisValue> _received = new(1000);
 
         private Dictionary<long, FastRedisValue> _results = new();
+        private List<FastRedisValue> _pushes = new();
 
         private long nextSendId = 0L;
         private long nextReceiveId = 0L;
 
         public IReadOnlyDictionary<long, FastRedisValue> Results => _results;
+        public IReadOnlyList<FastRedisValue> Pushes => _pushes;
 
         public bool Open(string host, int port) {
             _client = new TcpClient(host, port);
@@ -38,13 +40,6 @@ namespace FastRedis
             command.Add(new Memory<byte>(Encoding.Default.GetBytes("HELLO")));
             command.Add(new Memory<byte>(Encoding.Default.GetBytes("3")));
             EnqueueCommand(command);
-            BeginTick(_received);
-            Console.WriteLine("here");
-            foreach (var t in _received)
-            {
-                Console.WriteLine($"HELLO: {t}");
-            }
-            EndTick();
             
             return _client.Connected;
         }
@@ -70,6 +65,11 @@ namespace FastRedis
             // add enumerated results
             for (var i = 0; i < outResults.Count; i++)
             {
+                if (outResults[i].IsPush)
+                {
+                    _pushes.Add(outResults[i]);
+                    continue;
+                }
                 _results.Add(nextReceiveId++, outResults[i]);
             }
         }

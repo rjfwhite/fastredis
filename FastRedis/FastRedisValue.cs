@@ -11,6 +11,7 @@ namespace FastRedis
         public int? IntValue;
         public List<FastRedisValue> ArrayValue;
         public Dictionary<FastRedisValue, FastRedisValue> MapValue;
+        public bool IsPush;
 
         public void Reset()
         {
@@ -31,6 +32,8 @@ namespace FastRedis
             }
 
             MapValue.Clear();
+
+            IsPush = false;
         }
 
         public static int TryReadValue(Memory<byte> reader, ref FastRedisValue result)
@@ -327,8 +330,8 @@ namespace FastRedis
                 var totalBytesRead = 0;
                 var availableBytes = reader.Length;
 
-                // if read a *
-                if (reader.Span[0] != '*')
+                // if read a *, or > for push messages which are represented as arrays
+                if (reader.Span[0] != '*' && reader.Span[0] != '>') 
                 {
                     return -1;
                 }
@@ -431,6 +434,28 @@ namespace FastRedis
             {
                 return -1;
             }
+        }
+        
+        public static int TryReadPush(Memory<byte> reader, FastRedisValue result)
+        {
+            var totalBytesRead = 0;
+            var availableBytes = reader.Length;
+
+            // if read a %
+            if (reader.Span[0] != '>')
+            {
+                return -1;
+            }
+            
+            var pushValues = TryReadArray(reader, result.ArrayValue);
+
+            if (pushValues == -1)
+            {
+                return -1;
+            }
+
+            result.IsPush = true;
+            return totalBytesRead;
         }
 
         public static int TryReadValueList(Memory<byte> reader, List<FastRedisValue> outValueList, Queue<FastRedisValue> poolIn)
