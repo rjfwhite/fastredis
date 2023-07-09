@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
+using System.Text;
 
 namespace FastRedis
 {
@@ -13,6 +14,7 @@ namespace FastRedis
         private ByteBuffer writeBuffer = new();
 
         private Queue<FastRedisValue> _redisValuePool = new();
+        private List<FastRedisValue> _received = new(1000);
 
         private Dictionary<long, FastRedisValue> _results = new();
 
@@ -31,6 +33,19 @@ namespace FastRedis
                 redisValue.Reset();
                 _redisValuePool.Enqueue(redisValue);
             }
+            
+            var command = new List<Memory<byte>>();
+            command.Add(new Memory<byte>(Encoding.Default.GetBytes("HELLO")));
+            command.Add(new Memory<byte>(Encoding.Default.GetBytes("3")));
+            EnqueueCommand(command);
+            BeginTick(_received);
+            Console.WriteLine("here");
+            foreach (var t in _received)
+            {
+                Console.WriteLine($"HELLO: {t}");
+            }
+            EndTick();
+            
             return _client.Connected;
         }
         
@@ -59,7 +74,7 @@ namespace FastRedis
             }
         }
 
-        public long EqueueCommand(List<Memory<byte>> command)
+        public long EnqueueCommand(List<Memory<byte>> command)
         {
             var bytesWritten = FastRedisValue.WriteBulkStringArray(new Memory<byte>(writeBuffer.Data, writeBuffer.Head, writeBuffer.Data.Length - writeBuffer.Head), command);
             writeBuffer.Head += bytesWritten;

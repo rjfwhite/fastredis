@@ -33,7 +33,7 @@ public class FastRedisStreamingHash
         command.Add(new Memory<byte>(BitConverter.GetBytes(streamId)));
         
         // enqueue HGETALL
-        _initialDataId = _client.EqueueCommand(command);
+        _initialDataId = _client.EnqueueCommand(command);
     }
 
     public IReadOnlyDictionary<long, ByteBuffer> Data => _data;
