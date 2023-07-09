@@ -401,6 +401,8 @@ namespace FastRedis
                     return -1;
                 }
 
+                mapCount /= 2;
+
                 // advance read to start of map
                 reader = reader.Slice(read);
                 totalBytesRead += read;

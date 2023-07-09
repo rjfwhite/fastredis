@@ -19,8 +19,8 @@ public class FastRedisStreamingHash
     private long _streamId;
 
     private bool _hasSubscription = false;
-    private Memory<byte> _subscribeMessage = new Memory<byte>(Encoding.Default.GetBytes("subscribe"));
-    private Memory<byte> _messageMessage = new Memory<byte>(Encoding.Default.GetBytes("message"));
+    private Memory<byte> _subscribeMessage = new(Encoding.Default.GetBytes("subscribe"));
+    private Memory<byte> _messageMessage = new(Encoding.Default.GetBytes("message"));
     private Memory<byte> _messageStreamId;
     private bool _hasInitialData = false;
     private long _initialDataId;
