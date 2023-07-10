@@ -39,7 +39,7 @@ namespace FastRedis
             var command = new List<Memory<byte>>();
             command.Add(new Memory<byte>(Encoding.Default.GetBytes("HELLO")));
             command.Add(new Memory<byte>(Encoding.Default.GetBytes("3")));
-            EnqueueCommandWithoutId(command);
+            EnqueueCommand(command);
             
             return _client.Connected;
         }
@@ -83,7 +83,7 @@ namespace FastRedis
         public long EnqueueCommand(List<Memory<byte>> command)
         {
             EnqueueCommandWithoutId(command);
-            return ++nextSendId;
+            return nextSendId++;
         }
 
         public void EndTick()

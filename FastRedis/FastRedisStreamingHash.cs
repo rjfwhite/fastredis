@@ -37,8 +37,8 @@ public class FastRedisStreamingHash
         command.Add(Encoding.Default.GetBytes("SUBSCRIBE"));
         command.Add(new Memory<byte>(BitConverter.GetBytes(streamId)));
         
-        // enqueue subscribe
-         _client.EnqueueCommand(command);
+        // enqueue subscribe. Don't get an ID, pushes don't have IDs and subscribe "responses" are pushes
+         _client.EnqueueCommandWithoutId(command);
     }
 
     public IReadOnlyDictionary<long, ByteBuffer> Data => _data;

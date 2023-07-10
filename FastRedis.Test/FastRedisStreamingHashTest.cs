@@ -35,6 +35,7 @@ namespace FastRedis.Test
                 
                 while (!streamingHash.IsReady())
                 {
+                    streamingHashClientResults.Clear();
                     streamingHashClient.BeginTick(streamingHashClientResults);
                     streamingHash.Tick();
                     streamingHashClient.EndTick();
