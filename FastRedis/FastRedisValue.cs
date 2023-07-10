@@ -117,7 +117,19 @@ namespace FastRedis
                 // map
                 if (identifier == '%')
                 {
-                    var bytesRead = TryReadMap(reader, result.MapValue);
+                    var bytesRead = TryReadMap(reader, ref result.MapValue);
+                    if (bytesRead > 0)
+                    {
+                        return bytesRead;
+                    }
+
+                    return -1;
+                }
+                
+                // push
+                if (identifier == '>')
+                {
+                    var bytesRead = TryReadPush(reader, ref result);
                     if (bytesRead > 0)
                     {
                         return bytesRead;
@@ -378,7 +390,7 @@ namespace FastRedis
             }
         }
 
-        public static int TryReadMap(Memory<byte> reader, Dictionary<FastRedisValue, FastRedisValue> result)
+        public static int TryReadMap(Memory<byte> reader, ref Dictionary<FastRedisValue, FastRedisValue> result)
         {
             try
             {
@@ -400,9 +412,7 @@ namespace FastRedis
                 {
                     return -1;
                 }
-
-                mapCount /= 2;
-
+                
                 // advance read to start of map
                 reader = reader.Slice(read);
                 totalBytesRead += read;
@@ -438,20 +448,17 @@ namespace FastRedis
             }
         }
         
-        public static int TryReadPush(Memory<byte> reader, FastRedisValue result)
+        public static int TryReadPush(Memory<byte> reader, ref FastRedisValue result)
         {
-            var totalBytesRead = 0;
-            var availableBytes = reader.Length;
-
-            // if read a %
+            // if read a >
             if (reader.Span[0] != '>')
             {
                 return -1;
             }
             
-            var pushValues = TryReadArray(reader, result.ArrayValue);
+            var totalBytesRead = TryReadArray(reader, result.ArrayValue);
 
-            if (pushValues == -1)
+            if (totalBytesRead == -1)
             {
                 return -1;
             }

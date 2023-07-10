@@ -56,11 +56,9 @@ public class FastRedisStreamingHash
         
         if (!_hasSubscription)
         {
-            if(_client.Pushes.Any(
-                item => item.ArrayValue.Any() && 
-                        item.ArrayValue.Count > 3 && 
+            if(_client.Pushes.Any(item =>
                         item.ArrayValue[0].StringValue.Span.SequenceEqual(_subscribeMessage.Span) && 
-                        item.ArrayValue[1].IntValue == _streamId))
+                        item.ArrayValue[1].StringValue.Span.SequenceEqual(_messageStreamId.Span)))
             {
                 _hasSubscription = true;
                 // enqueue hgetall command for the stream id now that we have our subscription
@@ -88,20 +86,18 @@ public class FastRedisStreamingHash
         // Set initial data if we have it
         if (!_hasInitialData) {
             if (_client.Results.ContainsKey(_initialDataId))
-
             {
                 _hasInitialData = true;
                 _updateCount++;
 
                 var result = _client.Results[_initialDataId];
-                for (var i = 0; i < result.ArrayValue.Count; i += 2)
+                // foreach through key value pairs in result mapvalue
+                foreach(var (key, value) in result.MapValue)
                 {
-                    var key = _client.Results[i].StringValue;
-                    var value = _client.Results[i + 1].StringValue;
-                    var longKey = BytesToLong(key);
+                    var longKey = BytesToLong(key.StringValue);
                     _data.Add(longKey, new ByteBuffer());
-                    _data[longKey].Add(value);
-                    _updates.Add(longKey, value);
+                    _data[longKey].Add(value.StringValue);
+                    _updates.Add(longKey, value.StringValue);
                 }
             }
             else
@@ -167,6 +163,11 @@ public class FastRedisStreamingHash
                 _events.Add(eventBytes);
             }
         }
+    }
+
+    public bool IsReady()
+    {
+        return _hasInitialData;
     }
 
     private static long BytesToLong(Memory<byte> bytes)

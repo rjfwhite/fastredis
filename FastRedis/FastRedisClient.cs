@@ -39,7 +39,7 @@ namespace FastRedis
             var command = new List<Memory<byte>>();
             command.Add(new Memory<byte>(Encoding.Default.GetBytes("HELLO")));
             command.Add(new Memory<byte>(Encoding.Default.GetBytes("3")));
-            EnqueueCommand(command);
+            EnqueueCommandWithoutId(command);
             
             return _client.Connected;
         }
@@ -74,11 +74,16 @@ namespace FastRedis
             }
         }
 
-        public long EnqueueCommand(List<Memory<byte>> command)
+        public void EnqueueCommandWithoutId(List<Memory<byte>> command)
         {
             var bytesWritten = FastRedisValue.WriteBulkStringArray(new Memory<byte>(writeBuffer.Data, writeBuffer.Head, writeBuffer.Data.Length - writeBuffer.Head), command);
             writeBuffer.Head += bytesWritten;
-            return nextSendId++;
+        }
+
+        public long EnqueueCommand(List<Memory<byte>> command)
+        {
+            EnqueueCommandWithoutId(command);
+            return ++nextSendId;
         }
 
         public void EndTick()

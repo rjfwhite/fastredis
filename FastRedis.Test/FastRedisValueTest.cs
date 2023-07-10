@@ -208,9 +208,9 @@ namespace FastRedis.Test
             [Test]
             public void ReadMap()
             {
-                byte[] input = Encoding.ASCII.GetBytes("%4\r\n+key\r\n+value\r\n+anotherkey\r\n+anothervalue\r\n");
+                byte[] input = Encoding.ASCII.GetBytes("%2\r\n+key\r\n+value\r\n+anotherkey\r\n+anothervalue\r\n");
                 var results = new Dictionary<FastRedisValue, FastRedisValue>();
-                var bytesRead = FastRedisValue.TryReadMap(new Memory<byte>(input), results);
+                var bytesRead = FastRedisValue.TryReadMap(new Memory<byte>(input), ref results);
                 Assert.That(bytesRead, Is.EqualTo(input.Length));
                 Assert.That(results.Count, Is.EqualTo(2));
                 Assert.That(Encoding.Default.GetString(results.Keys.First().StringValue.ToArray()), Is.EqualTo("key"));
