@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Text;
 using System.Threading;
 
 namespace FastRedis;
@@ -17,7 +19,9 @@ public class FastRedisStreamingHash
     private long _streamId;
 
     private bool _hasSubscription = false;
-    private bool _subscriptionId;
+    private Memory<byte> _subscribeMessage = new(Encoding.Default.GetBytes("subscribe"));
+    private Memory<byte> _messageMessage = new(Encoding.Default.GetBytes("message"));
+    private Memory<byte> _messageStreamId;
     private bool _hasInitialData = false;
     private long _initialDataId;
     private Queue<Memory<byte>> _queuedUpdated = new();
@@ -26,14 +30,15 @@ public class FastRedisStreamingHash
     {
         _client = client;
         _streamId = streamId;
-
-        //TODO: Do this without allocation - probably a threadlocal list?
+        _messageStreamId = new Memory<byte>(BitConverter.GetBytes(streamId));
+        
+        // subscribe to the stream
         List<Memory<byte>> command = new();
-        command.Add(new Memory<byte>(new byte[]{(byte)'H', (byte)'G', (byte)'E', (byte)'T', (byte)'A', (byte)'L', (byte)'L'}));
+        command.Add(Encoding.Default.GetBytes("SUBSCRIBE"));
         command.Add(new Memory<byte>(BitConverter.GetBytes(streamId)));
         
-        // enqueue HGETALL
-        _initialDataId = _client.EqueueCommand(command);
+        // enqueue subscribe
+         _client.EnqueueCommand(command);
     }
 
     public IReadOnlyDictionary<long, ByteBuffer> Data => _data;
@@ -48,27 +53,56 @@ public class FastRedisStreamingHash
         _removals.Clear();
         _events.Clear();
         _updateCount = 0;
-
-        // if (!_hasSubscription && _client.Results.ContainsKey(_subscriptionId))
-        // {
-        //     
-        // }
+        
+        if (!_hasSubscription)
+        {
+            if(_client.Pushes.Any(item =>
+                        item.ArrayValue[0].StringValue.Span.SequenceEqual(_subscribeMessage.Span) && 
+                        item.ArrayValue[1].StringValue.Span.SequenceEqual(_messageStreamId.Span)))
+            {
+                _hasSubscription = true;
+                // enqueue hgetall command for the stream id now that we have our subscription
+                List<Memory<byte>> command = new();
+                command.Add(Encoding.Default.GetBytes("HGETALL"));
+                command.Add(new Memory<byte>(BitConverter.GetBytes(_streamId)));
+                _initialDataId = _client.EnqueueCommand(command);
+            }
+            else
+            {
+                return;
+            }
+        }
+        
+        foreach(var push in _client.Pushes)
+        {
+            if (!push.ArrayValue[0].StringValue.Span.SequenceEqual(_messageMessage.Span) || 
+                !push.ArrayValue[1].StringValue.Span.SequenceEqual(_messageStreamId.Span))
+            {
+                continue;
+            }
+            _queuedUpdated.Enqueue(push.ArrayValue[3].StringValue);
+        }
         
         // Set initial data if we have it
-        if (!_hasInitialData && _client.Results.ContainsKey(_initialDataId))
-        {
-            _hasInitialData = true;
-            _updateCount++;
-            
-            var result = _client.Results[_initialDataId];
-            for (var i = 0; i < result.ArrayValue.Count; i+= 2)
+        if (!_hasInitialData) {
+            if (_client.Results.ContainsKey(_initialDataId))
             {
-                var key = _client.Results[i].StringValue;
-                var value = _client.Results[i + 1].StringValue;
-                var longKey = BytesToLong(key);
-                _data.Add(longKey, new ByteBuffer());
-                _data[longKey].Add(value);
-                _updates.Add(longKey, value);
+                _hasInitialData = true;
+                _updateCount++;
+
+                var result = _client.Results[_initialDataId];
+                // foreach through key value pairs in result mapvalue
+                foreach(var (key, value) in result.MapValue)
+                {
+                    var longKey = BytesToLong(key.StringValue);
+                    _data.Add(longKey, new ByteBuffer());
+                    _data[longKey].Add(value.StringValue);
+                    _updates.Add(longKey, value.StringValue);
+                }
+            }
+            else
+            {
+                return;
             }
         }
         
@@ -76,8 +110,6 @@ public class FastRedisStreamingHash
         {
             ProcessUpdate(result);
         }
-        
-        
     }
     
     private void ProcessUpdate(Memory<byte> update)
@@ -131,6 +163,11 @@ public class FastRedisStreamingHash
                 _events.Add(eventBytes);
             }
         }
+    }
+
+    public bool IsReady()
+    {
+        return _hasInitialData;
     }
 
     private static long BytesToLong(Memory<byte> bytes)

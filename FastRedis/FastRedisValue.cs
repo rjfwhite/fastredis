@@ -10,6 +10,8 @@ namespace FastRedis
         public bool NullValue;
         public int? IntValue;
         public List<FastRedisValue> ArrayValue;
+        public Dictionary<FastRedisValue, FastRedisValue> MapValue;
+        public bool IsPush;
 
         public void Reset()
         {
@@ -22,7 +24,16 @@ namespace FastRedis
                 // TODO: this is a hack to avoid allocations for lists of size 0-100
                 ArrayValue = new List<FastRedisValue>(100);
             }
+
             ArrayValue.Clear();
+            if (MapValue == null)
+            {
+                MapValue = new Dictionary<FastRedisValue, FastRedisValue>(100);
+            }
+
+            MapValue.Clear();
+
+            IsPush = false;
         }
 
         public static int TryReadValue(Memory<byte> reader, ref FastRedisValue result)
@@ -102,12 +113,36 @@ namespace FastRedis
 
                     return -1;
                 }
+                
+                // map
+                if (identifier == '%')
+                {
+                    var bytesRead = TryReadMap(reader, ref result.MapValue);
+                    if (bytesRead > 0)
+                    {
+                        return bytesRead;
+                    }
+
+                    return -1;
+                }
+                
+                // push
+                if (identifier == '>')
+                {
+                    var bytesRead = TryReadPush(reader, ref result);
+                    if (bytesRead > 0)
+                    {
+                        return bytesRead;
+                    }
+
+                    return -1;
+                }
             }
-            catch (IndexOutOfRangeException e)
+            catch (IndexOutOfRangeException)
             {
                 return -1;
             }
-            catch (ArgumentOutOfRangeException e)
+            catch (ArgumentOutOfRangeException)
             {
                 return -1;
             }
@@ -161,12 +196,12 @@ namespace FastRedis
                 // header + string + CLRF
                 return totalBytesRead;
             }
-            catch (IndexOutOfRangeException e)
+            catch (IndexOutOfRangeException)
             {
                 result = new Memory<byte>();
                 return -1;
             }
-            catch (ArgumentOutOfRangeException e)
+            catch (ArgumentOutOfRangeException)
             {
                 result = new Memory<byte>();
                 return -1;
@@ -223,12 +258,12 @@ namespace FastRedis
 
                 return totalBytesRead;
             }
-            catch (IndexOutOfRangeException e)
+            catch (IndexOutOfRangeException)
             {
                 result = null;
                 return -1;
             }
-            catch (ArgumentOutOfRangeException e)
+            catch (ArgumentOutOfRangeException)
             {
                 result = null;
                 return -1;
@@ -293,7 +328,7 @@ namespace FastRedis
 
                 return totalBytesRead;
             }
-            catch (IndexOutOfRangeException e)
+            catch (IndexOutOfRangeException)
             {
                 result = -1;
                 return -1;
@@ -307,8 +342,8 @@ namespace FastRedis
                 var totalBytesRead = 0;
                 var availableBytes = reader.Length;
 
-                // if read a *
-                if (reader.Span[0] != '*')
+                // if read a *, or > for push messages which are represented as arrays
+                if (reader.Span[0] != '*' && reader.Span[0] != '>') 
                 {
                     return -1;
                 }
@@ -349,10 +384,87 @@ namespace FastRedis
 
                 return totalBytesRead;
             }
-            catch (IndexOutOfRangeException e)
+            catch (IndexOutOfRangeException)
             {
                 return -1;
             }
+        }
+
+        public static int TryReadMap(Memory<byte> reader, ref Dictionary<FastRedisValue, FastRedisValue> result)
+        {
+            try
+            {
+                var totalBytesRead = 0;
+                var availableBytes = reader.Length;
+
+                // if read a %
+                if (reader.Span[0] != '%')
+                {
+                    return -1;
+                }
+
+                // consume the identifier
+                reader = reader.Slice(1);
+                totalBytesRead++;
+
+                int read = TryReadIntegerValue(reader, out var mapCount);
+                if (read == -1)
+                {
+                    return -1;
+                }
+                
+                // advance read to start of map
+                reader = reader.Slice(read);
+                totalBytesRead += read;
+
+                for (var i = 0; i < mapCount; i++)
+                {
+                    var key = new FastRedisValue();
+                    var value = new FastRedisValue();
+
+                    var bytesReadKey = TryReadValue(reader, ref key);
+                    if (bytesReadKey == -1)
+                    {
+                        return -1;
+                    }
+
+                    reader = reader.Slice(bytesReadKey);
+                    var bytesReadValue = TryReadValue(reader, ref value);
+                    if (bytesReadValue == -1)
+                    {
+                        return -1;
+                    }
+
+                    reader = reader.Slice(bytesReadValue);
+                    totalBytesRead += bytesReadKey + bytesReadValue;
+                    result.Add(key, value);
+                }
+
+                return totalBytesRead;
+            }
+            catch (IndexOutOfRangeException)
+            {
+                return -1;
+            }
+        }
+        
+        public static int TryReadPush(Memory<byte> reader, ref FastRedisValue result)
+        {
+            // if read a >
+            if (reader.Span[0] != '>')
+            {
+                return -1;
+            }
+            
+            var totalBytesRead = TryReadArray(reader, result.ArrayValue);
+
+            if (totalBytesRead == -1)
+            {
+                return -1;
+            }
+
+            result.IsPush = true;
+            return totalBytesRead;
         }
 
         public static int TryReadValueList(Memory<byte> reader, List<FastRedisValue> outValueList, Queue<FastRedisValue> poolIn)

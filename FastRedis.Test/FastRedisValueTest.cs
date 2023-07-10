@@ -204,6 +204,34 @@ namespace FastRedis.Test
                 Assert.That(bytesWritten, Is.EqualTo(result.Length));
                 Assert.That(Encoding.Default.GetString(output, 0, bytesWritten), Is.EqualTo(result));
             }
+
+            [Test]
+            public void ReadMap()
+            {
+                byte[] input = Encoding.ASCII.GetBytes("%2\r\n+key\r\n+value\r\n+anotherkey\r\n+anothervalue\r\n");
+                var results = new Dictionary<FastRedisValue, FastRedisValue>();
+                var bytesRead = FastRedisValue.TryReadMap(new Memory<byte>(input), ref results);
+                Assert.That(bytesRead, Is.EqualTo(input.Length));
+                Assert.That(results.Count, Is.EqualTo(2));
+                Assert.That(Encoding.Default.GetString(results.Keys.First().StringValue.ToArray()), Is.EqualTo("key"));
+                Assert.That(Encoding.Default.GetString(results.Keys.Last().StringValue.ToArray()), Is.EqualTo("anotherkey"));
+                Assert.That(Encoding.Default.GetString(results.Values.First().StringValue.ToArray()), Is.EqualTo("value"));
+                Assert.That(Encoding.Default.GetString(results.Values.Last().StringValue.ToArray()), Is.EqualTo("anothervalue"));
+            }
+
+            [Test]
+            public void ReadPush()
+            {
+                byte[] input = Encoding.ASCII.GetBytes(">4\r\n+hello\r\n+world\r\n+t\r\n+values\r\n");
+                var results = new List<FastRedisValue>();
+                var bytesRead = FastRedisValue.TryReadArray(new Memory<byte>(input), results);
+                Assert.That(bytesRead, Is.EqualTo(input.Length));
+                Assert.That(results.Count, Is.EqualTo(4));
+                Assert.That(Encoding.Default.GetString(results[0].StringValue.ToArray()), Is.EqualTo("hello"));
+                Assert.That(Encoding.Default.GetString(results[1].StringValue.ToArray()), Is.EqualTo("world"));
+                Assert.That(Encoding.Default.GetString(results[2].StringValue.ToArray()), Is.EqualTo("t"));
+                Assert.That(Encoding.Default.GetString(results[3].StringValue.ToArray()), Is.EqualTo("values"));
+            }
         }
     }
 }
